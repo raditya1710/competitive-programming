@@ -8,6 +8,8 @@ LANG: C++11
 using namespace std;
 typedef pair<int,int> pii;
 typedef long long LL;
+typedef pair<pii,LL> piil;
+
 #define fi first
 #define se second
 #define mp make_pair
@@ -87,13 +89,11 @@ inline void dfs(int now){
 }
 
 vector<int> cutidx;
-vector<pii> edges;
+vector<piil> edges; 
 
 void init(){
   for(int i = 0;i < (int) edges.size(); ++i){
-    int e = edges[i].fi, s = edges[i].se;
-    // rG[e][s] = dont[e][s] ? 0 : G[e][s];
-    // rG[s][e] = dont[s][e] ? 0 : G[s][e];
+    int e = edges[i].fi.fi, s = edges[i].fi.se;
     rG[e][s] = G[e][s];
     rG[s][e] = G[s][e];
   }
@@ -108,8 +108,9 @@ int main(){
     scanf("%d%d%d", &s, &e, &c);
     adj[s].pb(e);
     adj[e].pb(s);
-    edges.pb(mp(s, e));
-    G[s][e] += 1LL * c * MULTIPLIER + 1;
+    LL f = 1LL * c * MULTIPLIER + 1;
+    edges.pb(mp(mp(s, e), f));
+    G[s][e] += f;
   }
   init();
   for(int i = 1;i <= n; ++i){
@@ -121,22 +122,19 @@ int main(){
   LL real_flow = maxflow / MULTIPLIER;
   int num_cut = (int)(maxflow % MULTIPLIER);
 
-  // dfs(1);
-  // for(int i = 0;i < (int) edges.size(); ++i){
-  //   if(visit[edges[i].fi] && !visit[edges[i].se]){
-  //     cutidx.push_back(i + 1);
-  //   }
-  // }
   for(int i = 0, idx_cut = 0;i < (int) edges.size() && idx_cut < num_cut; ++i){
-    int u = edges[i].fi;
-    int v = edges[i].se;
+    int u = edges[i].fi.fi;
+    int v = edges[i].fi.se;
+    LL f = edges[i].se;
+    G[u][v] -= f;
     init();
-    rG[u][v] = 0;
     LL tempflow = DinicMaxFlow(1, n);
-    if(tempflow + G[u][v] == maxflow) {
+    if(tempflow + f == maxflow) {
       cutidx.push_back(i + 1);
       idx_cut++;
+      maxflow -= f;
     }
+    else G[u][v] += f;
   }
 
   fprintf(stderr, "%d %d\n", num_cut, (int) cutidx.size());
